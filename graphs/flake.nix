@@ -29,7 +29,10 @@
 
       # ── `nix develop` ────────────────────────────────────────────────
       devShells.${system}.default = pkgs.mkShell {
-        packages = [ pythonEnv ];
+        packages = with pkgs; [
+          pythonEnv
+          arduino-ide
+        ];
         shellHook = ''
           echo "ESP32 Dashboard dev shell ready."
           echo "Run:  python server.py"

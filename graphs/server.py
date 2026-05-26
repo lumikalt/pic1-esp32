@@ -1,10 +1,15 @@
-from flask import Flask, Response, render_template_string
-import requests, json, threading, time
+from flask import Flask, Response, render_template_string, send_from_directory
+import requests, json, threading, time, os
 
 app = Flask(__name__)
 
-ESP32_IP = "192.168.1.90"   # change to ESP32 IP (shown on Serial)
-ESP32_URL = f"http://{ESP32_IP}/data"
+# ESP32_IP = "192.168.1.90"   # change to ESP32 IP (shown on Serial)
+# ESP32_URL = f"http://{ESP32_IP}/data"
+
+# When using ./mock_esp32.py
+ESP32_IP  = "localhost"
+ESP32_URL = "http://localhost:5001/data"
+
 
 latest = {}
 lock = threading.Lock()
@@ -37,77 +42,155 @@ HTML = r"""
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0d0d1a; color: #eee; font-family: Arial, sans-serif; }
-    h1 { text-align:center; padding: 14px; color: #4af; font-size: 1.4em; letter-spacing:2px; }
-    #status { text-align:center; font-size:.85em; color:#0f0; margin-bottom:8px; }
+/* ── FONTS ─────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "Corpta";
+  font-style: normal;
+  font-weight: 700;
+  src: url("/fonts/Corpta/Corpta.otf") format("opentype");
+}
+@font-face {
+  font-family: "DepartureMono";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/DepartureMono/DepartureMono-Regular.woff2") format("woff2");
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto auto;
-      gap: 12px;
-      padding: 0 12px 12px;
-      max-width: 1300px;
-      margin: auto;
-    }
+/* ── VARIABLES ──────────────────────────────────────────────────────── */
+:root {
+  --fg:          #f8f7ff;
+  --bg:          #071029;
+  --bg-item:     #080d18;
+  --bg-accent:   #0b1026;
+  --glass:       rgba(255,255,255,0.03);
+  --shade:       #221233;
+  --accent1:     #00f0ff;
+  --accent2:     #ff66d9;
+  --accent3:     #9a7cff;
+  --border:      2px solid var(--fg);
 
-    /* 3D viewer spans both columns */
-    #viewer-card {
-      grid-column: 1 / -1;
-      background: #12122a;
-      border-radius: 12px;
-      padding: 10px;
-      border: 1px solid #223;
-    }
-    #viewer-card h2 { color:#4af; margin-bottom:6px; font-size:1em; text-align:center; }
-    #three-container {
-      width: 100%;
-      height: 320px;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-    }
-    #three-container canvas { width:100%!important; height:100%!important; }
+  --accent1-shadow-light: 0 0 6px rgba(0,240,255,0.6);
+  --accent1-shadow-heavy: 0 0 2px #00f0ff, 0 0 18px rgba(0,240,255,0.25);
+  --accent2-shadow-light: 0 0 6px rgba(255,102,217,0.6);
+  --accent2-shadow-heavy: 0 0 2px #ff66d9, 0 0 18px rgba(255,102,217,0.18);
+  --accent3-shadow-heavy: 0 0 2px #9a7cff, 0 0 16px rgba(154,124,255,0.14);
 
-    /* Angle readouts */
-    #angles {
-      display:flex; justify-content:center; gap:30px;
-      margin-top:8px; font-size:1.1em; font-family:monospace;
-    }
-    #angles span { color:#aaa; }
-    #angles b { color:#fff; }
+  --q-move: 160ms ease-in-out;
+  --q-glow: 240ms ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --q-move: 0ms; --q-glow: 0ms; }
+}
 
-    .card {
-      background: #12122a;
-      border-radius: 12px;
-      padding: 12px;
-      border: 1px solid #223;
-    }
-    .card h2 { color:#4af; font-size:.95em; margin-bottom:8px; text-align:center; }
+/* ── BASE ───────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Motor status spans both columns */
-    #motor-card {
-      grid-column: 1 / -1;
-      background: #12122a;
-      border-radius: 12px;
-      padding: 10px 20px;
-      border: 1px solid #223;
-      text-align: center;
-    }
-    #motor-card h2 { color:#4af; font-size:.95em; margin-bottom:4px; }
-    #motor-val { font-size:1.2em; font-family:monospace; color:#ff0; }
-  </style>
+body {
+  background:  var(--bg);
+  color:       var(--fg);
+  font-family: "DepartureMono", monospace;
+}
+
+h1 {
+  text-align:    center;
+  padding:       14px;
+  color:         var(--accent1);
+  font-family:   "Corpta", monospace;
+  font-size:     1.4em;
+  letter-spacing: 3px;
+  text-shadow:   var(--accent1-shadow-heavy);
+}
+
+#status {
+  text-align:  center;
+  font-size:   .85em;
+  color:       var(--accent1);
+  margin-bottom: 8px;
+  transition:  color var(--q-glow);
+}
+
+/* ── GRID ───────────────────────────────────────────────────────────── */
+.grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   12px;
+  padding:               0 12px 12px;
+  max-width:             1300px;
+  margin:                auto;
+}
+
+/* ── CARDS ──────────────────────────────────────────────────────────── */
+.card,
+#viewer-card,
+#motor-card {
+  background:    var(--bg-accent);
+  border-radius: 12px;
+  padding:       12px;
+  border:        1px solid var(--shade);
+  box-shadow:    var(--accent3-shadow-heavy);
+  transition:    box-shadow var(--q-glow);
+}
+.card:hover,
+#viewer-card:hover,
+#motor-card:hover {
+  box-shadow: var(--accent1-shadow-heavy);
+}
+
+#viewer-card,
+#motor-card { grid-column: 1 / -1; }
+
+.card h2,
+#viewer-card h2,
+#motor-card h2 {
+  color:        var(--accent3);
+  font-family:  "Corpta", monospace;
+  font-size:    .95em;
+  margin-bottom: 8px;
+  text-align:   center;
+  text-shadow:  var(--accent3-shadow-heavy);
+  letter-spacing: 1px;
+}
+
+/* ── 3D VIEWER ──────────────────────────────────────────────────────── */
+#three-container {
+  width:         100%;
+  height:        320px;
+  border-radius: 8px;
+  overflow:      hidden;
+  border:        1px solid var(--shade);
+}
+#three-container canvas { width: 100%!important; height: 100%!important; }
+
+#angles {
+  display:         flex;
+  justify-content: center;
+  gap:             30px;
+  margin-top:      8px;
+  font-size:       1.1em;
+}
+#angles span { color: var(--fg); opacity: .7; }
+#angles b    { color: var(--accent2); text-shadow: var(--accent2-shadow-light); }
+
+/* ── MOTOR ──────────────────────────────────────────────────────────── */
+#motor-card  { text-align: center; padding: 10px 20px; }
+#motor-val   {
+  font-size:   1.2em;
+  color:       var(--accent2);
+  text-shadow: var(--accent2-shadow-light);
+  transition:  color var(--q-glow), text-shadow var(--q-glow);
+}
+  </style
 </head>
 <body>
-<h1>⚡ ESP32 Live Dashboard</h1>
-<div id="status">⏳ Connecting...</div>
+
+<h1>Satellite Live Data</h1>
+
+<div id="status">Connecting...</div>
 
 <div class="grid">
 
   <!-- 3D Viewer -->
   <div id="viewer-card">
-    <h2>3D Orientation (Roll / Pitch / Yaw)</h2>
     <div id="three-container"></div>
     <div id="angles">
       <span>Roll: <b id="v-roll">0.00</b>°</span>
@@ -282,10 +365,10 @@ async function fetchData() {
     // Motor
     document.getElementById('motor-val').textContent = d.motor;
     document.getElementById('status').textContent =
-      '🟢 Live — ' + new Date().toLocaleTimeString();
+      '[OK] Live — ' + new Date().toLocaleTimeString();
 
   } catch(e) {
-    document.getElementById('status').textContent = '🔴 No connection';
+    document.getElementById('status').textContent = '[ERROR] No connection';
   }
 }
 
@@ -300,7 +383,22 @@ fetchData();
 def index():
     return render_template_string(HTML)
 
+# Absolute path to the directory containing dashboard.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FONTS_DIR = os.path.join(BASE_DIR, "fonts")
+
+@app.route('/fonts/<path:filename>')
+def fonts(filename):
+    return send_from_directory(FONTS_DIR, filename)
+
 if __name__ == '__main__':
+    if not os.path.isdir(FONTS_DIR):
+        print(f"[WARN] Fonts directory not found: {FONTS_DIR}")
+    else:
+        print(f"[OK] Fonts directory: {FONTS_DIR}")
+        for root, _, files in os.walk(FONTS_DIR):
+            for f in files:
+                print(f"  {os.path.join(root, f)}")
     print(f"Polling ESP32 at {ESP32_URL}")
     print("Open http://localhost:5000 in your browser")
     app.run(host='0.0.0.0', port=5000, debug=False)
