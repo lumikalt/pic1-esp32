@@ -12,8 +12,8 @@ void handleRoot();
 void handleData();
 
 // ------------------- WI-FI -------------------
-const char* ssid = "RAMLX131E";
-const char* password = "Ssgnr2018#";
+const char* ssid = "iPhone";
+const char* password = "PICIST2026";
 
 WebServer server(80);
 
