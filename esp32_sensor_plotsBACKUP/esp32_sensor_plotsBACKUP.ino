@@ -22,10 +22,10 @@ WebServer server(80);
 #define I2C_SCL 9
 
 // ------------------- DRV8833 PWM PINS -------------------
-#define MOTOR_A_IN1 5
-#define MOTOR_A_IN2 6
-#define MOTOR_B_IN3 7
-#define MOTOR_B_IN4 10
+#define MOTOR_A_IN1 6
+#define MOTOR_A_IN2 5
+#define MOTOR_B_IN3 4
+#define MOTOR_B_IN4 3
 
 QMC5883P mag;
 MPU6050 mpu6050(Wire);
