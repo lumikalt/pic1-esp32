@@ -35,7 +35,7 @@ unsigned long lastPrintTime = 0;
 const unsigned long printInterval = 200;   // lê sensores 5x por segundo
 
 unsigned long lastMotorTime = 0;
-const unsigned long motorInterval = 4000;
+const unsigned long motorInterval = 5000;  // Cada estado dura agora exatamente 5 segundos
 int motorState = 0;
 
 // ------------------- VARIÁVEIS GLOBAIS -------------------
@@ -348,33 +348,43 @@ void loop() {
   accY = mpu6050.getAccY();
   accZ = mpu6050.getAccZ();
 
+  // Máquina de estados baseada na tabela (A -> B -> C -> D -> E)
   if (millis() - lastMotorTime >= motorInterval) {
     lastMotorTime = millis();
     switch (motorState) {
-      case 0:
-        setMotorA(200);
-        setMotorB(200);
-        currentMotor = "Frente / Ativo (+)";
+      case 0: // ESTADO A: B1 = OFF, B2 = OFF
+        setMotorA(0);
+        setMotorB(0);
+        currentMotor = "Estado A (B1: OFF, B2: OFF)";
         motorState = 1;
         break;
 
-      case 1:
-        stopMotors();
-        currentMotor = "Parado";
+      case 1: // ESTADO B: B1 = +, B2 = OFF
+        setMotorA(200);
+        setMotorB(0);
+        currentMotor = "Estado B (B1: +, B2: OFF)";
         motorState = 2;
         break;
 
-      case 2:
-        setMotorA(-150);
-        setMotorB(-150);
-        currentMotor = "Trás / Ativo (-)";
+      case 2: // ESTADO C: B1 = OFF, B2 = -
+        setMotorA(0);
+        setMotorB(-200);
+        currentMotor = "Estado C (B1: OFF, B2: -)";
         motorState = 3;
         break;
 
-      case 3:
-        stopMotors();
-        currentMotor = "Parado";
-        motorState = 0;
+      case 3: // ESTADO D: B1 = -, B2 = OFF
+        setMotorA(-200);
+        setMotorB(0);
+        currentMotor = "Estado D (B1: -, B2: OFF)";
+        motorState = 4;
+        break;
+
+      case 4: // ESTADO E: B1 = OFF, B2 = +
+        setMotorA(0);
+        setMotorB(200);
+        currentMotor = "Estado E (B1: OFF, B2: +)";
+        motorState = 0; // Reinicia a sequência voltando ao Estado A
         break;
     }
   }
@@ -390,8 +400,8 @@ void loop() {
     }
 
     Serial.printf(
-      "Mag(X:%.2f Y:%.2f Z:%.2f) | Acc(X:%.2f Y:%.2f Z:%.2f) | YPR(%.2f, %.2f, %.2f)\n",
-      magX, magY, magZ, accX, accY, accZ, yaw, pitch, roll
+      "Mag(X:%.2f Y:%.2f Z:%.2f) | Acc(X:%.2f Y:%.2f Z:%.2f) | YPR(%.2f, %.2f, %.2f) | %s\n",
+      magX, magY, magZ, accX, accY, accZ, yaw, pitch, roll, currentMotor.c_str()
     );
   }
 }

@@ -10,8 +10,8 @@
 // ===========================
 // Enter your WiFi credentials
 // ===========================
-const char *ssid = "Redmi Note 11S";
-const char *password = "pintarolaswifi";
+const char* ssid = "CW";
+const char* password = "244466666";
 
 void startCameraServer();
 void setupLedFlash();
