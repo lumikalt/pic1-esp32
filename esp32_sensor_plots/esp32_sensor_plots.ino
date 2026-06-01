@@ -290,6 +290,8 @@ void handleData() {
   json += "}";
 
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  // Enable CORS
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);
 }
 
