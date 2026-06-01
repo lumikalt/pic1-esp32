@@ -324,7 +324,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       const plotW = width  - padL - padR;
       const plotH = height - padT - padB;
 
-      ctx.fillStyle = '#ffffff'; 
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
       const all = series.values.flat();
@@ -335,10 +335,10 @@ const char index_html[] PROGMEM = R"rawliteral(
       minY -= mg; maxY += mg;
       const rng = maxY - minY;
 
-      ctx.strokeStyle = '#eee'; 
+      ctx.strokeStyle = '#eee';
       ctx.lineWidth = 1;
       ctx.font = '11px Courier New';
-      ctx.fillStyle = '#666'; 
+      ctx.fillStyle = '#666';
       for (let i = 0; i <= 4; i++) {
         const y = padT + (plotH * i) / 4;
         ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
@@ -354,7 +354,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         ctx.strokeStyle = lineColors[s];
         ctx.lineWidth = 1.8;
         ctx.shadowColor  = lineColors[s];
-        ctx.shadowBlur = 2; 
+        ctx.shadowBlur = 2;
         ctx.beginPath();
         for (let i = 0; i < vals.length; i++) {
           const x = padL + i * xStep;
@@ -417,6 +417,8 @@ void handleData() {
   json += "\"roll\":"     + String(roll,  2);
   json += "}";
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  // Enable CORS
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);
 }
 
@@ -534,4 +536,3 @@ void stopMotors() {
   analogWrite(MOTOR_B_IN3, 0);
   analogWrite(MOTOR_B_IN4, 0);
 }
-
