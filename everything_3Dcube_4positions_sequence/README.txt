@@ -8,11 +8,15 @@ pág. web contêm:
 
 
 Controlo dos Motores:
-- Front : motorA 0 ; motorB +
-- Right : motorA + ; motorB 0
-- Back : motorA 0 ; motorB -
-- Left : motorA - ; motorB 0
-- Sequence : Front - Right - Back - Left     (alterando cada posicao a cada 10 segundos, em loop)
+- Back : motorA 0 ; motorB +
+- Left : motorA + ; motorB 0
+- Front : motorA 0 ; motorB -
+- Right : motorA - ; motorB 0
+- Sequence : Back - Left - Front - Right     (alterando cada posicao a cada 10 segundos, em loop)
 - Stopped : motorA 0 ; motorB 0
 
 ps : comando permanece até ser clicado outro botão
+
+
+8/5 : Back deixou de funcionar ----- sem solução
+      Apenas 3 posições controláveis
