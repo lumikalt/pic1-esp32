@@ -51,7 +51,7 @@ int currentPosition = -1;
 bool autoSequenceActive = false;
 int autoSequenceCase = 0;
 unsigned long lastAutoSequenceTime = 0;
-const unsigned long autoSequenceInterval = 10000;
+const unsigned long autoSequenceInterval = 30000;
 
 // ------------------- WEBPAGE -------------------
 const char index_html[] PROGMEM = R"rawliteral(
@@ -265,7 +265,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <button type="button" class="switch-btn pos0" data-cmd="pos0" onclick="sendMotor('pos0')">
         <div class="switch-label">
           <span class="icon">1</span>
-          <span class="name">Front</span>
+          <span class="name">Back</span>
           <div class="pill"></div>
         </div>
       </button>
@@ -273,7 +273,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <button type="button" class="switch-btn pos1" data-cmd="pos1" onclick="sendMotor('pos1')">
         <div class="switch-label">
           <span class="icon">2</span>
-          <span class="name">Right</span>
+          <span class="name">Left</span>
           <div class="pill"></div>
         </div>
       </button>
@@ -281,7 +281,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <button type="button" class="switch-btn pos2" data-cmd="pos2" onclick="sendMotor('pos2')">
         <div class="switch-label">
           <span class="icon">3</span>
-          <span class="name">Back</span>
+          <span class="name">Front</span>
           <div class="pill"></div>
         </div>
       </button>
@@ -289,7 +289,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <button type="button" class="switch-btn pos3" data-cmd="pos3" onclick="sendMotor('pos3')">
         <div class="switch-label">
           <span class="icon">4</span>
-          <span class="name">Left</span>
+          <span class="name">Right</span>
           <div class="pill"></div>
         </div>
       </button>
@@ -347,10 +347,10 @@ const char index_html[] PROGMEM = R"rawliteral(
     const motorLabel = document.getElementById('motorLabel');
 
     const stateLabels = {
-      pos0: 'Front',
-      pos1: 'Right',
-      pos2: 'Back',
-      pos3: 'Left',
+      pos0: 'Back',
+      pos1: 'Left',
+      pos2: 'Front',
+      pos3: 'Right',
       auto: 'Auto sequence',
       stop: 'Stopped | Motor A: 0 | Motor B: 0'
     };
@@ -517,19 +517,19 @@ void handleMotor() {
   if (cmd == "pos0") {
     autoSequenceActive = false;
     applyMotorCase(0);
-    currentMotor = motorStateText("Front");
+    currentMotor = motorStateText("Back");
   } else if (cmd == "pos1") {
     autoSequenceActive = false;
     applyMotorCase(1);
-    currentMotor = motorStateText("Right");
+    currentMotor = motorStateText("Left");
   } else if (cmd == "pos2") {
     autoSequenceActive = false;
     applyMotorCase(2);
-    currentMotor = motorStateText("Back");
+    currentMotor = motorStateText("Front");
   } else if (cmd == "pos3") {
     autoSequenceActive = false;
     applyMotorCase(3);
-    currentMotor = motorStateText("Left");
+    currentMotor = motorStateText("Right");
   } else if (cmd == "auto") {
     startAutoSequence();
   } else if (cmd == "stop") {
@@ -630,10 +630,10 @@ String motorSymbol(int speed) {
 
 String positionName(int posCase) {
   switch (((posCase % 4) + 4) % 4) {
-    case 0: return "Front";
-    case 1: return "Right";
-    case 2: return "Back";
-    case 3: return "Left";
+    case 0: return "Back";
+    case 1: return "Left";
+    case 2: return "Front";
+    case 3: return "Right";
   }
   return "Unknown";
 }
@@ -657,7 +657,7 @@ void applyMotorCase(int posCase) {
       setMotorB(0);
       break;
     case 2:  // Back
-      setMotorA(0);
+      setMotorA(-95);
       setMotorB(-MOTOR_SPEED);
       break;
     case 3:  // Left
