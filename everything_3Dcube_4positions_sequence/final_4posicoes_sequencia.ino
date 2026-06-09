@@ -96,6 +96,37 @@ const char index_html[] PROGMEM = R"rawliteral(
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
 
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 14px;
+      align-items: stretch;
+      max-width: 920px;
+      margin: 14px auto;
+    }
+
+    .hero-grid .card {
+      margin: 0;
+      max-width: none;
+      width: 100%;
+    }
+
+    .model-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .model-card .scene {
+      flex: 1;
+      min-height: 260px;
+    }
+
+    @media (max-width: 760px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     h2 {
       font-size: 0.85em;
       letter-spacing: 0.1em;
@@ -136,6 +167,20 @@ const char index_html[] PROGMEM = R"rawliteral(
     }
 
     .switch-label .icon { font-size: 1.8em; }
+    .switch-label .arrow-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #8fb8ff, #4d7cff);
+      color: #ffffff;
+      font-size: 1.45em;
+      font-weight: bold;
+      line-height: 1;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 5px rgba(0, 123, 255, 0.35);
+    }
     .switch-label .name {
       font-size: 0.8em;
       letter-spacing: 0.1em;
@@ -258,60 +303,68 @@ const char index_html[] PROGMEM = R"rawliteral(
 <body>
   <h1>ESP32 Control Panel</h1>
 
-  <div class="card">
-    <h2>Motor Control</h2>
-    <div class="switch-group" id="motorGroup">
+  <div class="hero-grid">
+    <div class="card">
+      <h2>Motor Control</h2>
+      <div class="switch-group" id="motorGroup">
+        <button type="button" class="switch-btn pos1" data-cmd="pos1" onclick="sendMotor('pos1')">
+          <div class="switch-label">
+            <span class="icon arrow-icon">&larr;</span>
+            <span class="name">Left</span>
+            <div class="pill"></div>
+          </div>
+        </button>
 
-      <button type="button" class="switch-btn pos0" data-cmd="pos0" onclick="sendMotor('pos0')">
-        <div class="switch-label">
-          <span class="icon">1</span>
-          <span class="name">Back</span>
-          <div class="pill"></div>
-        </div>
-      </button>
+        <button type="button" class="switch-btn pos2" data-cmd="pos2" onclick="sendMotor('pos2')">
+          <div class="switch-label">
+            <span class="icon arrow-icon">&uarr;</span>
+            <span class="name">Front</span>
+            <div class="pill"></div>
+          </div>
+        </button>
 
-      <button type="button" class="switch-btn pos1" data-cmd="pos1" onclick="sendMotor('pos1')">
-        <div class="switch-label">
-          <span class="icon">2</span>
-          <span class="name">Left</span>
-          <div class="pill"></div>
-        </div>
-      </button>
+        <button type="button" class="switch-btn pos3" data-cmd="pos3" onclick="sendMotor('pos3')">
+          <div class="switch-label">
+            <span class="icon arrow-icon">&rarr;</span>
+            <span class="name">Right</span>
+            <div class="pill"></div>
+          </div>
+        </button>
 
-      <button type="button" class="switch-btn pos2" data-cmd="pos2" onclick="sendMotor('pos2')">
-        <div class="switch-label">
-          <span class="icon">3</span>
-          <span class="name">Front</span>
-          <div class="pill"></div>
-        </div>
-      </button>
+        <button type="button" class="switch-btn auto" data-cmd="auto" onclick="sendMotor('auto')">
+          <div class="switch-label">
+            <span class="icon">🔁</span>
+            <span class="name">Sequence</span>
+            <div class="pill"></div>
+          </div>
+        </button>
 
-      <button type="button" class="switch-btn pos3" data-cmd="pos3" onclick="sendMotor('pos3')">
-        <div class="switch-label">
-          <span class="icon">4</span>
-          <span class="name">Right</span>
-          <div class="pill"></div>
-        </div>
-      </button>
+        <button type="button" class="switch-btn stop active" data-cmd="stop" onclick="sendMotor('stop')">
+          <div class="switch-label">
+            <span class="icon">⏹️</span>
+            <span class="name">Stop</span>
+            <div class="pill"></div>
+          </div>
+        </button>
 
-      <button type="button" class="switch-btn auto" data-cmd="auto" onclick="sendMotor('auto')">
-        <div class="switch-label">
-          <span class="icon">🔁</span>
-          <span class="name">Sequence</span>
-          <div class="pill"></div>
-        </div>
-      </button>
-
-      <button type="button" class="switch-btn stop active" data-cmd="stop" onclick="sendMotor('stop')">
-        <div class="switch-label">
-          <span class="icon">⏹️</span>
-          <span class="name">Stop</span>
-          <div class="pill"></div>
-        </div>
-      </button>
-
+      </div>
+      <p id="motor-status">Motor status: <span id="motorLabel">Stopped | Motor A: 0 | Motor B: 0</span></p>
     </div>
-    <p id="motor-status">Motor status: <span id="motorLabel">Stopped | Motor A: 0 | Motor B: 0</span></p>
+
+    <div class="card model-card">
+      <h2>3D Orientation (Yaw / Pitch / Roll)</h2>
+      <div class="scene">
+        <div class="cube" id="cube3d">
+          <div class="cube__face cube__face--front">Front</div>
+          <div class="cube__face cube__face--back">Back</div>
+          <div class="cube__face cube__face--right">Right</div>
+          <div class="cube__face cube__face--left">Left</div>
+          <div class="cube__face cube__face--top">Top</div>
+          <div class="cube__face cube__face--bottom">Bottom</div>
+        </div>
+      </div>
+      <p class="legend" id="yprText">Yaw: 0° | Pitch: 0° | Roll: 0°</p>
+    </div>
   </div>
 
   <div class="card">
@@ -326,30 +379,14 @@ const char index_html[] PROGMEM = R"rawliteral(
     <p class="legend">X = red &nbsp;|&nbsp; Y = green &nbsp;|&nbsp; Z = blue</p>
   </div>
 
-  <div class="card">
-    <h2>3D Orientation (Yaw / Pitch / Roll)</h2>
-    <div class="scene">
-      <div class="cube" id="cube3d">
-        <div class="cube__face cube__face--front">Front</div>
-        <div class="cube__face cube__face--back">Back</div>
-        <div class="cube__face cube__face--right">Right</div>
-        <div class="cube__face cube__face--left">Left</div>
-        <div class="cube__face cube__face--top">Top</div>
-        <div class="cube__face cube__face--bottom">Bottom</div>
-      </div>
-    </div>
-    <p class="legend" id="yprText">Yaw: 0° | Pitch: 0° | Roll: 0°</p>
-  </div>
-
   <script>
     // ---- Motor buttons ----
     const motorButtons = document.querySelectorAll('.switch-btn');
     const motorLabel = document.getElementById('motorLabel');
 
     const stateLabels = {
-      pos0: 'Back',
       pos1: 'Left',
-      pos2: 'Front',
+      pos2: 'Front | Motor A: 0 | Motor B: -',
       pos3: 'Right',
       auto: 'Auto sequence',
       stop: 'Stopped | Motor A: 0 | Motor B: 0'
@@ -514,11 +551,7 @@ void handleMotor() {
   }
   String cmd = server.arg("cmd");
 
-  if (cmd == "pos0") {
-    autoSequenceActive = false;
-    applyMotorCase(0);
-    currentMotor = motorStateText("Back");
-  } else if (cmd == "pos1") {
+  if (cmd == "pos1") {
     autoSequenceActive = false;
     applyMotorCase(1);
     currentMotor = motorStateText("Left");
@@ -629,8 +662,7 @@ String motorSymbol(int speed) {
 }
 
 String positionName(int posCase) {
-  switch (((posCase % 4) + 4) % 4) {
-    case 0: return "Back";
+  switch (posCase) {
     case 1: return "Left";
     case 2: return "Front";
     case 3: return "Right";
@@ -639,6 +671,9 @@ String positionName(int posCase) {
 }
 
 String motorStateText(const String &label) {
+  if (label.indexOf("Front") >= 0) {
+    return label + " | Motor A: 0 | Motor B: -";
+  }
   return label + " | Motor A: " + motorSymbol(motorACommand) + " | Motor B: " + motorSymbol(motorBCommand);
 }
 
@@ -657,7 +692,7 @@ void applyMotorCase(int posCase) {
       setMotorB(0);
       break;
     case 2:  // Back
-      setMotorA(-95);
+      setMotorA(-140);
       setMotorB(-MOTOR_SPEED);
       break;
     case 3:  // Left
@@ -667,16 +702,16 @@ void applyMotorCase(int posCase) {
   }
 }
 
+int nextSequencePosition(int posCase) {
+  if (posCase < 1 || posCase >= 3) return 1;
+  return posCase + 1;
+}
+
 void startAutoSequence() {
   autoSequenceActive = true;
 
-  // If no direction has been chosen yet, start at Front.
-  // If a direction was already active, continue from the next direction.
-  if (currentPosition < 0) {
-    autoSequenceCase = 0;
-  } else {
-    autoSequenceCase = (currentPosition + 1) % 4;
-  }
+  // Sequence without Back: Left -> Front -> Right.
+  autoSequenceCase = nextSequencePosition(currentPosition);
 
   applyMotorCase(autoSequenceCase);
   lastAutoSequenceTime = millis();
@@ -689,7 +724,7 @@ void updateAutoSequence() {
   unsigned long now = millis();
   if (now - lastAutoSequenceTime >= autoSequenceInterval) {
     lastAutoSequenceTime = now;
-    autoSequenceCase = (currentPosition + 1) % 4;
+    autoSequenceCase = nextSequencePosition(currentPosition);
     applyMotorCase(autoSequenceCase);
     currentMotor = motorStateText("Sequence | " + positionName(currentPosition));
     Serial.println(currentMotor);
